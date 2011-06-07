@@ -22,9 +22,8 @@
 #include "Fireworks/Core/interface/Context.h"
 
 #include "DataFormats/EcalRecHit/interface/EcalRecHit.h"
-#include "Fireworks/ParticleFlow/interface/FWPFRhoPhiRecHit.h"
+#include "Fireworks/ParticleFlow/plugins/FWPFRhoPhiRecHit.h"
 #include "Fireworks/ParticleFlow/interface/FWPFUtils.h"
-#include "Fireworks/ParticleFlow/interface/FWPFMaths.h"
 
 #include "Fireworks/Core/interface/FWViewContext.h"
 #include "Fireworks/Core/interface/FWViewEnergyScale.h"
@@ -38,8 +37,8 @@ class FWPFEcalRecHitRPProxyBuilder : public FWProxyBuilderTemplate<EcalRecHit>
       static std::string typeOfBuilder() { return "simple#"; }
 
    // ---------------- Constructor(s)/Destructor ----------------------
-      FWPFEcalRecHitRPProxyBuilder(){}
-      virtual ~FWPFEcalRecHitRPProxyBuilder(){}
+      FWPFEcalRecHitRPProxyBuilder(){ m_pfUtils = new FWPFUtils(); }
+      virtual ~FWPFEcalRecHitRPProxyBuilder(){ delete m_pfUtils; }
 
    // --------------------- Member Functions --------------------------
       virtual void build( const FWEventItem *iItem, TEveElementList *product, const FWViewContext* );
@@ -56,9 +55,11 @@ class FWPFEcalRecHitRPProxyBuilder : public FWProxyBuilderTemplate<EcalRecHit>
 
    // --------------------- Member Functions --------------------------
       TEveVector calculateCentre( const float *corners );
+      float      calculateEt( const TEveVector &centre, float E );
 
    // ----------------------- Data Members ----------------------------
       std::vector<FWPFRhoPhiRecHit*> m_towers;
+      FWPFUtils *m_pfUtils;
 };
 #endif
 //=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_=_

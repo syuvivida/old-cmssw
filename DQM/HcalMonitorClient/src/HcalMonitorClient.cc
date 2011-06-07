@@ -1,8 +1,8 @@
 /*
  * \file HcalMonitorClient.cc
  * 
- * $Date: 2011/04/12 18:25:42 $
- * $Revision: 1.101 $
+ * $Date: 2010/07/15 22:39:02 $
+ * $Revision: 1.99 $
  * \author J. Temple
  * 
  */
@@ -75,8 +75,6 @@ HcalMonitorClient::HcalMonitorClient(const edm::ParameterSet& ps)
   databaseFirstUpdate_ = ps.getUntrackedParameter<int>("databaseFirstUpdate",10);
 
   saveByLumiSection_  = ps.getUntrackedParameter<bool>("saveByLumiSection",false);
-  Online_                = ps.getUntrackedParameter<bool>("online",false);
-
 
   if (debug_>0)
     {
@@ -410,28 +408,18 @@ void HcalMonitorClient::endRun(void)
 
 void HcalMonitorClient::endRun(const edm::Run& r, const edm::EventSetup& c) 
 {
-  // Set values here, because the "analyze" method occasionally times out, 
-  // which keeps the endRun() call from being made.  This causes endJob to
-  // crash, since end_run_ is still set to false at that point.
-  begin_run_ = false;
-  end_run_   = true;
-
   this->analyze();
   this->endRun();
 }
 
 void HcalMonitorClient::endJob(void)
 {
-  // Temporary fix for crash of April 2011 in online DQM
-  if (Online_==true)
-    return;
-
   if (! end_run_)
     {
       this->analyze();
       this->endRun();
     }
-  this->cleanup(); // currently does nothing
+  this->cleanup();
 
   for ( unsigned int i=0; i<clients_.size(); i++ ) 
     clients_[i]->endJob();

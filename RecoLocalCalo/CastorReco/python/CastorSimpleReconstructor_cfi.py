@@ -7,6 +7,5 @@ castorreco = cms.EDProducer("CastorSimpleReconstructor",
     Subdetector = cms.string('CASTOR'),
     firstSample = cms.int32(4),
     correctForPhaseContainment = cms.bool(False),
-    correctForTimeslew = cms.bool(False),
-    tsFromDB = cms.untracked.bool(True)
+    correctForTimeslew = cms.bool(False)
 )

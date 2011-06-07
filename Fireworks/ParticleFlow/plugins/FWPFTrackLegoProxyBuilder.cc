@@ -4,10 +4,9 @@
 void
 FWPFTrackLegoProxyBuilder::build( const reco::Track &iData, unsigned int iIndex, TEveElement &oItemHolder, const FWViewContext *vc )
 {
-   FWPFTrackUtils *utils = new FWPFTrackUtils();
-   TEveStraightLineSet *legoTrack = utils->setupLegoTrack( iData );
-   setupAddElement( legoTrack, &oItemHolder );
-   delete utils;
+   TEveStraightLineSet *legoTrack = m_trackUtils->setupLegoTrack( iData );
+   legoTrack->SetRnrMarkers( true );
+   setupAddElement( legoTrack, &oItemHolder ); 
 }
 
 //______________________________________________________________________________

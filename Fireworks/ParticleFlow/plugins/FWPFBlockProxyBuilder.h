@@ -17,6 +17,7 @@
 // System include files
 #include <math.h>
 #include "TEveScalableStraightLineSet.h"
+#include "TEveCompound.h"
 
 // User include files
 #include "Fireworks/Core/interface/FWSimpleProxyBuilderTemplate.h"
@@ -29,7 +30,7 @@
 
 #include "Fireworks/ParticleFlow/interface/FWPFTrackUtils.h"
 #include "Fireworks/ParticleFlow/interface/FWPFClusterRPZUtils.h"
-#include "Fireworks/ParticleFlow/interface/FWPFLegoCandidate.h"
+#include "FWPFLegoCandidate.h"
 
 //-----------------------------------------------------------------------------
 // FWPFBlockProxyBuilder
@@ -47,6 +48,7 @@ class FWPFBlockProxyBuilder : public FWSimpleProxyBuilderTemplate<reco::PFBlock>
 
    protected:
    // --------------------- Member Functions --------------------------
+      float          calculateEt( const TEveVector &cluster, float e );
       void           setupTrackElement( const reco::PFBlockElement&, TEveElement&, const FWViewContext*, FWViewType::EType );
       void           setupClusterElement( const reco::PFBlockElement&, TEveElement&, const FWViewContext*, 
                                           FWViewType::EType, float r );

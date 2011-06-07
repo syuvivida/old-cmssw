@@ -40,6 +40,7 @@ class FWPFClusterRPZProxyBuilder : public FWSimpleProxyBuilderTemplate<reco::PFC
    protected:
    // ----------------------- Data Members ----------------------------
       std::vector<ScalableLines> m_clusters;
+      FWPFUtils                  *m_pfUtils;
       FWPFClusterRPZUtils        *m_clusterUtils;
 
    // --------------------- Member Functions --------------------------

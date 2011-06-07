@@ -29,8 +29,6 @@ class PFCandidateDQMAnalyzer: public edm::EDAnalyzer {
   PFCandidateMonitor pfCandidateMonitor_;
 
   edm::ParameterSet pSet_;
-
-  int nBadEvents_;
 };
 
 #endif 

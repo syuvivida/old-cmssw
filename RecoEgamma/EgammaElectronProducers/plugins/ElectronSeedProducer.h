@@ -35,6 +35,7 @@ namespace edm
 #include "DataFormats/TrajectorySeed/interface/TrajectorySeedCollection.h"
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 #include "DataFormats/Common/interface/Handle.h"
+#include "DataFormats/Common/interface/EDProduct.h"
 
 
 class ElectronSeedProducer : public edm::EDProducer

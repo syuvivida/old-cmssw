@@ -21,6 +21,7 @@ namespace edm
 
 #include "RecoEgamma/EgammaElectronAlgos/interface/GsfElectronAlgo.h"
 #include "DataFormats/Common/interface/Handle.h"
+#include "DataFormats/Common/interface/EDProduct.h"
 
 class GsfElectronBaseProducer : public edm::EDProducer
  {

@@ -55,9 +55,25 @@ FWPFEcalRecHitLegoProxyBuilder::calculateCentre( const std::vector<TEveVector> &
 }
 
 //______________________________________________________________________________
+float
+FWPFEcalRecHitLegoProxyBuilder::calculateEt( const TEveVector &centre, float E )
+{
+   TEveVector vec = centre;
+   float et;
+
+   vec.Normalize();
+   vec *= E;
+   et = vec.Perp();
+
+   return et;
+}
+
+//______________________________________________________________________________
 void
 FWPFEcalRecHitLegoProxyBuilder::build( const FWEventItem *iItem, TEveElementList *product, const FWViewContext *vc )
 {
+   float maxEnergy = 0.0f;
+   float maxEt = 0.0f;
    size_t itemSize = iItem->size(); //cache size
 
    for( size_t index = 0; index < itemSize; ++index )
@@ -92,13 +108,13 @@ FWPFEcalRecHitLegoProxyBuilder::build( const FWEventItem *iItem, TEveElementList
 
       centre = calculateCentre( etaphiCorners );
       energy = iData.energy();
-      et = FWPFMaths::calculateEt( centre, energy );
+      et = calculateEt( centre, energy );
       context().voteMaxEtAndEnergy( et, energy );
 
-      if( energy > m_maxEnergy )
-         m_maxEnergy = energy;
-      if( energy > m_maxEt )
-         m_maxEt = et;
+      if( energy > maxEnergy )
+         maxEnergy = energy;
+      if( energy > maxEt )
+         maxEt = et;
 
       // Stop phi wrap
       float dPhi1 = etaphiCorners[2].fY - etaphiCorners[1].fY;
@@ -116,12 +132,14 @@ FWPFEcalRecHitLegoProxyBuilder::build( const FWEventItem *iItem, TEveElementList
          etaphiCorners[3].fY = etaphiCorners[3].fY + ( 2 * TMath::Pi() );
 
       FWPFLegoRecHit *recHit = new FWPFLegoRecHit( etaphiCorners, itemHolder, this, vc, energy, et );
-      recHit->setSquareColor( item()->defaultDisplayProperties().color() );
+      recHit->setSquareColor(item()->defaultDisplayProperties().color());
       m_recHits.push_back( recHit );
    }
-
-      m_maxEnergyLog = log( m_maxEnergy );
-      m_maxEtLog = log( m_maxEt );
+      
+      m_maxEnergy = maxEnergy;
+      m_maxEt = maxEt;
+      m_maxEnergyLog = log(maxEnergy);
+      m_maxEtLog = log(maxEt);
 
       scaleProduct( product, FWViewType::kLegoPFECAL, vc );
 }

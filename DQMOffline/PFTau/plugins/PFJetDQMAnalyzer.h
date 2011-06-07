@@ -29,7 +29,6 @@ class PFJetDQMAnalyzer: public edm::EDAnalyzer {
   PFJetMonitor pfJetMonitor_;
 
   edm::ParameterSet pSet_;
-  int nBadEvents_;
 };
 
 #endif 
