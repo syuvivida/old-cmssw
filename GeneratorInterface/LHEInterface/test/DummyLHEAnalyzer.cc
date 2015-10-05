@@ -50,6 +50,11 @@ private:
   TH1F* h_dR;
   TH1F* h_D_dR[2]; // between the daughters
 
+  TH1F* h_dEta;
+  TH1F* h_B_dEta;
+  TH1F* h_D_dEta[2];
+ 
+
   TH1F* h_cos;
   TH1F* h_cosThetaStar; // Boson scattering angle in the X rest frame
   TH1F* h_cosTheta[2]; //Daugher scattering angle in the Boson 1 rest frame
@@ -57,8 +62,12 @@ private:
 public:
   explicit DummyLHEAnalyzer( const edm::ParameterSet & cfg ) : 
     src_( cfg.getParameter<InputTag>( "src" )),
-    fileName_(cfg.getUntrackedParameter<std::string>("histoutputFile"))
+    fileName_(cfg.getUntrackedParameter<std::string>("histoutputFile")),
+    filterGF_(cfg.getParameter<bool>("filterGF")),
+    filterhh_(cfg.getParameter<bool>("filterhh"))
   {
+    std::cout << "Filtering GF = " << filterGF_ << std::endl;
+    std::cout << "Filtering hh = " << filterhh_ << std::endl;
   }
   void beginJob(){
     output = new TFile(fileName_.data(), "RECREATE");
@@ -71,6 +80,8 @@ public:
     h_y-> Sumw2();
     h_dR = new TH1F("h_dR","",200,0,2);
     h_dR->Sumw2();
+    h_dEta = new TH1F("h_dEta","",100,0,10);
+    h_dEta->Sumw2();
 
     h_cos = new TH1F("h_cos","",100,-1,1);
     h_cos->Sumw2();
@@ -105,6 +116,9 @@ public:
     h_cosPhi       -> SetXTitle("cos#Phi");
     h_cosPhi       -> SetTitle("Cosine of the angle between the decay planes");
 
+    h_B_dEta       = (TH1F*)h_dEta->Clone("h_B_dEta");
+    h_B_dEta       -> SetXTitle("#Delta #eta between the two bosons");
+
     for(int i=0; i <2; i++)
       {
 	h_Bpt[i] = (TH1F*)h_p->Clone(Form("h_Bpt%d",i));
@@ -128,6 +142,9 @@ public:
 
 	h_D_dR[i] =(TH1F*)h_dR->Clone(Form("h_D_dR%d",i));
 	h_D_dR[i]->SetXTitle(Form("#Delta R between the Daughters of Boson %d",i));
+
+	h_D_dEta[i] = (TH1F*)h_dEta->Clone(Form("h_D_dEta%d",i));
+	h_D_dEta[i] -> SetXTitle(Form("#Delta #eta between the Daughters of Boson %d",i));
 
 	h_cosTheta[i] =(TH1F*)h_cos->Clone(Form("h_cosTheta%d",i));
 	h_cosTheta[i]->SetXTitle(Form("cos#theta_{%d}",i));
@@ -161,7 +178,7 @@ private:
     Handle<LHEEventProduct> evt;
     iEvent.getByLabel( src_, evt );
 
-    double weight = evt->originalXWGTUP(); 
+    double weight =1;// evt->originalXWGTUP(); 
     const lhef::HEPEUP hepeup_ = evt->hepeup();
 
     const int nup_ = hepeup_.NUP; 
@@ -171,10 +188,9 @@ private:
     const std::vector<std::pair< int,int > > motup_ = hepeup_.MOTHUP;
 
     std::vector<TLorentzVector> l4_vector;
-
+    bool gluonFusion=false;
     for ( unsigned int icount = 0 ; icount < (unsigned int)nup_; icount++ ) {
-
-      // int PID    = idup_[icount];
+      
       int status = istup_[icount];
       double px = (pup_[icount])[0];
       double py = (pup_[icount])[1];
@@ -182,14 +198,15 @@ private:
       double e  = (pup_[icount])[3];
       // int momIndex = motup_[icount].first-1;
       // int momPID =  momIndex >=0 ? idup_[momIndex]:-1;
- 
+      int PID    = idup_[icount];
+      if(status==-1 && PID==21)gluonFusion=true;
       if(status!=1)continue;
       l4_vector.push_back(TLorentzVector(px,py,pz,e));
 
     } // end of loop over particles
 
     if(l4_vector.size()!=4)return;
-
+    if(!gluonFusion && filterGF_)return;
 
     
     TLorentzVector l4_d[2][2];
@@ -206,6 +223,13 @@ private:
 	  }
 	normal_l3[i] = l4_d[i][0].Vect().Cross( l4_d[i][1].Vect() );
       }
+
+    if(filterhh_ && fabs(l4_B[0].Eta())>2.5)return;
+    if(filterhh_ && fabs(l4_B[1].Eta())>2.5)return;
+
+    float deta_B = fabs(l4_B[0].Eta()-l4_B[1].Eta());
+    h_B_dEta->Fill(deta_B);
+    if(filterhh_ && deta_B>1.3)return;
 
     double cosphi= TMath::Cos(normal_l3[0].Angle(normal_l3[1]));
     h_cosPhi->Fill(cosphi,weight);
@@ -272,6 +296,9 @@ private:
 	h_BmT[i]->Fill(lt_B[i].M(),weight);
 	h_D_dR[i]->Fill(l4_d[i][0].DeltaR(l4_d[i][1]),weight);
 
+	float deta=fabs(l4_d[i][0].Eta()-l4_d[i][1].Eta());
+	h_D_dEta[i]->Fill(deta);
+
 	for(int j=0; j<2; j++){
 	  h_Dpt[i][j]->Fill(l4_d[i][j].Pt(),weight);
 	  h_Dpz[i][j]->Fill(l4_d[i][j].Pz(),weight);
@@ -292,12 +319,15 @@ private:
     h_cosThetaStar->Write();
     h_cosPhi->Write();
 
+    h_B_dEta->Write();
+
     for(int i=0; i<2; i++){
       h_Bpt[i]->Write();
       h_Bpz[i]->Write();
       h_Bm[i]->Write();
       h_BmT[i]->Write();
       h_By[i]->Write();
+      h_D_dEta[i]->Write();
       h_D_dR[i]->Write();
       h_cosTheta[i]->Write();
 
@@ -320,6 +350,8 @@ private:
 
   InputTag src_;
   std::string fileName_;
+  bool filterGF_;
+  bool filterhh_;
 };
 
 #include "FWCore/Framework/interface/MakerMacros.h"

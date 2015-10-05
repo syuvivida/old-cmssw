@@ -2,6 +2,19 @@ import FWCore.ParameterSet.Config as cms
 
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing ('analysis')
+options.register ('fgf',
+                  False,
+                  VarParsing.multiplicity.singleton,
+                  VarParsing.varType.bool,
+                  "fgf")
+
+options.register ('fhh',
+                  False,
+                  VarParsing.multiplicity.singleton,
+                  VarParsing.varType.bool,
+                  "fhh")
+
+
 options.parseArguments()
 
 
@@ -17,7 +30,9 @@ process.source = cms.Source("LHESource",
 
 process.dummy = cms.EDAnalyzer("DummyLHEAnalyzer",
     src = cms.InputTag("source"),
-    histoutputFile= cms.untracked.string(options.outputFile)          
+    histoutputFile= cms.untracked.string(options.outputFile),
+    filterGF =  cms.bool(options.fgf),
+    filterhh =  cms.bool(options.fhh)
 )
 
 
