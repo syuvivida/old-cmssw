@@ -63,10 +63,25 @@ public:
   explicit DummyLHEAnalyzer( const edm::ParameterSet & cfg ) : 
     src_( cfg.getParameter<InputTag>( "src" )),
     fileName_(cfg.getUntrackedParameter<std::string>("histoutputFile")),
-    filterGF_(cfg.getParameter<bool>("filterGF")),
-    filterhh_(cfg.getParameter<bool>("filterhh"))
+    filterProduction_(cfg.getParameter<int>("filterProduction")),
+    filterhh_(cfg.getParameter<bool>("filterhh")),
+    nTotal_(0),
+    nPass_(0)
   {
-    std::cout << "Filtering GF = " << filterGF_ << std::endl;
+    switch(filterProduction_){
+    case 0: 
+      std::cout << "Filtering mode = keeping all process" << std::endl;
+      break;
+    case 1:
+      std::cout << "Filtering mode = keeping only gluon fusion" << std::endl;
+      break;
+    case 2:
+      std::cout << "Filtering mode = keeping only q-qbar annihilation " << std::endl;
+      break;
+    default:
+      std::cout << "Filtering mode = keeping all process" << std::endl;
+      break;
+    }
     std::cout << "Filtering hh = " << filterhh_ << std::endl;
   }
   void beginJob(){
@@ -174,7 +189,8 @@ public:
 
 private:
   void analyze( const Event & iEvent, const EventSetup & iSetup ) {
-
+    
+    nTotal_++;
     Handle<LHEEventProduct> evt;
     iEvent.getByLabel( src_, evt );
 
@@ -206,7 +222,8 @@ private:
     } // end of loop over particles
 
     if(l4_vector.size()!=4)return;
-    if(!gluonFusion && filterGF_)return;
+    if(!gluonFusion && filterProduction_==1)return;
+    if( gluonFusion && filterProduction_==2)return;
 
     
     TLorentzVector l4_d[2][2];
@@ -305,10 +322,15 @@ private:
 	  h_Dy[i][j]->Fill(l4_d[i][j].Rapidity(),weight);
 	}
       }
+    nPass_++;
 
   }
       
   void endJob(){
+
+    std::cout << "Total number of processed events = " << nTotal_ << std::endl;
+    std::cout << "Total number of passed events = " << nPass_ << std::endl;
+
     output->cd();
     h_Xpt->Write();
     h_Xpz->Write();
@@ -350,8 +372,10 @@ private:
 
   InputTag src_;
   std::string fileName_;
-  bool filterGF_;
+  int filterProduction_; // 0: all, 1: gluon only, 2: DY only
   bool filterhh_;
+  long int nTotal_;
+  long int nPass_;
 };
 
 #include "FWCore/Framework/interface/MakerMacros.h"
