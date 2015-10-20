@@ -28,7 +28,9 @@ private:
 
   TH1F* h_p;
   TH1F* h_pz;
+  TH1F* h_n;
 
+  TH1F* h_HT;
   TH1F* h_Xpt; // new particle 
   TH1F* h_Xpz; 
   TH1F* h_Bpt[2];  // two bosons
@@ -91,6 +93,10 @@ public:
     h_p->Sumw2();
     h_pz = new TH1F("h_pz","",150,-3000,3000);
     h_pz->Sumw2();
+    h_n = new TH1F("h_n","",6,-0.5,5.5);
+    h_n->Sumw2();
+    h_n->SetXTitle("parton multiplicity");
+
     h_y = new TH1F("h_y","",300,-3,3);
     h_y-> Sumw2();
     h_dR = new TH1F("h_dR","",200,0,2);
@@ -100,6 +106,9 @@ public:
 
     h_cos = new TH1F("h_cos","",100,-1,1);
     h_cos->Sumw2();
+
+    h_HT = (TH1F*)h_p->Clone("h_HT");
+    h_HT->SetXTitle("H_{T} [GeV]");
 
     h_Xpt = new TH1F("h_Xpt","",100,0,500);
     h_Xpt-> SetXTitle("p_{T}(X) [GeV]");
@@ -205,6 +214,8 @@ private:
 
     std::vector<TLorentzVector> l4_vector;
     bool gluonFusion=false;
+    unsigned int njet=0;
+    double ht=0;
     for ( unsigned int icount = 0 ; icount < (unsigned int)nup_; icount++ ) {
       
       int status = istup_[icount];
@@ -217,10 +228,16 @@ private:
       int PID    = idup_[icount];
       if(status==-1 && PID==21)gluonFusion=true;
       if(status!=1)continue;
+      if(abs(PID)==21 || ( abs(PID) >=1 && abs(PID)<=5 ))
+	{
+	  njet++;
+	  ht += sqrt(px*px+py*py);
+	}
       l4_vector.push_back(TLorentzVector(px,py,pz,e));
 
     } // end of loop over particles
-
+    h_HT->Fill(ht);
+    h_n->Fill(njet);
     if(l4_vector.size()!=4)return;
     if(!gluonFusion && filterProduction_==1)return;
     if( gluonFusion && filterProduction_==2)return;
@@ -332,6 +349,8 @@ private:
     std::cout << "Total number of passed events = " << nPass_ << std::endl;
 
     output->cd();
+    h_n->Write();
+    h_HT->Write();
     h_Xpt->Write();
     h_Xpz->Write();
     h_Xm->Write();
