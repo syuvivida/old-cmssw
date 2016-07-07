@@ -5,6 +5,9 @@
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "DataFormats/METReco/interface/GenMET.h"
 #include "DataFormats/METReco/interface/GenMETCollection.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+#include "DataFormats/JetReco/interface/GenJet.h"
+#include "DataFormats/JetReco/interface/GenJetCollection.h"
 #include "DataFormats/Common/interface/Handle.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -30,6 +33,7 @@ private:
   edm::EDGetTokenT<reco::GenMETCollection> genMETToken_true;
   edm::EDGetTokenT<reco::GenMETCollection> genMETToken_calo;
   edm::EDGetTokenT<reco::GenMETCollection> genMETToken_caloNonPrompt;
+  edm::EDGetTokenT<reco::GenJetCollection> genMETToken_jets;
 
   TFile * output;
   TH1F* h_p;
@@ -40,6 +44,7 @@ private:
   TH1F* h_MET_true;
   TH1F* h_MET_calo;
   TH1F* h_MET_caloNonPrompt;
+  TH1F* h_MET_genJet;
   TH1F* h_Xpt; // new particle 
   TH1F* h_Xpz; 
   TH1F* h_Bpt[2];  // two bosons
@@ -75,6 +80,7 @@ public:
     genMETToken_true          = consumes<reco::GenMETCollection>(edm::InputTag("genMetTrue"));
     genMETToken_calo          = consumes<reco::GenMETCollection>(edm::InputTag("genMetCalo"));
     genMETToken_caloNonPrompt = consumes<reco::GenMETCollection>(edm::InputTag("genMetCaloAndNonPrompt"));
+    genMETToken_jets          = consumes<reco::GenJetCollection>(edm::InputTag("ak4GenJets"));
   }
 
   void beginJob(){
@@ -110,6 +116,8 @@ public:
     h_MET_caloNonPrompt = (TH1F*)h_p->Clone("h_MET_caloNonPrompt");
     h_MET_caloNonPrompt->SetXTitle("#slash{E}_{T}^{caloNonPrompt} [GeV]");
 
+    h_MET_genJet = (TH1F*)h_p->Clone("h_MET_genJet");
+    h_MET_genJet->SetXTitle("#slash{E}_{T}^{jet} [GeV]");
 
     h_Xpt = new TH1F("h_Xpt","",100,0,500);
     h_Xpt-> SetXTitle("p_{T}(X) [GeV]");
@@ -185,6 +193,34 @@ private:
     Handle<reco::GenMETCollection> metHandle_caloNonPrompt;
     if(iEvent.getByToken(genMETToken_caloNonPrompt, metHandle_caloNonPrompt))
       h_MET_caloNonPrompt->Fill(metHandle_caloNonPrompt.product()->begin()->pt());
+
+    Handle<reco::GenJetCollection> genJetsHandle;
+    if(iEvent.getByToken(genMETToken_jets,genJetsHandle)){ 
+
+      const reco::GenJetCollection* genJetColl = &(*genJetsHandle);
+      reco::GenJetCollection::const_iterator gjeti = genJetColl->begin();   
+      TLorentzVector jet_MET(0,0,0,0);
+
+      for(; gjeti!=genJetColl->end();gjeti++){
+	reco::GenJet gjet = *gjeti;
+	if(gjet.pt()<=20)continue;
+	if(fabs(gjet.eta())>3.0)continue;
+	TLorentzVector thisGJet_l4(gjet.px(),gjet.py(),gjet.pz(),gjet.energy());
+	for(unsigned int k=0; k < gjet.getGenConstituents().size(); k++){
+	  int pdg=abs(gjet.getGenConstituent(k)->pdgId());
+	  if(pdg==12 || pdg==14 || pdg==16 || pdg==18 || pdg==9000006)
+	    thisGJet_l4 -= TLorentzVector(gjet.getGenConstituent(k)->px(),
+					  gjet.getGenConstituent(k)->py(),
+					  gjet.getGenConstituent(k)->pz(),
+					  gjet.getGenConstituent(k)->energy());
+	}
+
+	jet_MET += thisGJet_l4;
+      }
+      
+      if(jet_MET.Pt()>1e-6)
+	h_MET_genJet->Fill(jet_MET.Pt());
+    }
 
     Handle<LHEEventProduct> evt;
     iEvent.getByToken(lheEventToken,evt);
@@ -308,6 +344,7 @@ private:
     h_MET_true->Write();
     h_MET_calo->Write();
     h_MET_caloNonPrompt->Write();
+    h_MET_genJet->Write();
     h_Xpt->Write();
     h_Xpz->Write();
     h_Xm->Write();
